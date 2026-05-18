@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitTrack - Fitness Yolculuğun Burada Başlıyor</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/style.css">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .hero {
+      background-image: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), url('images/background.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    .feature-card {
+      transition: all 0.4s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-10px);
+      border-color: rgb(16 185 129);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full bg-zinc-950/90 backdrop-blur-lg z-50 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💪</div>
+        <h1 onclick="window.location.href='index.html'" class="text-3xl font-bold tracking-tighter cursor-pointer">FitTrack</h1>
+      </div>
+
+      <div class="hidden md:flex items-center gap-8 text-lg">
+        <a href="#" class="hover:text-emerald-400 transition">Ana Sayfa</a>
+        <a href="#ozellikler" class="hover:text-emerald-400 transition">Özellikler</a>
+        <a href="#nasil" class="hover:text-emerald-400 transition">Nasıl Çalışır?</a>
+      </div>
+
+      <div class="flex items-center gap-4" id="authButtons">
+        <a href="login.html" class="px-6 py-3 rounded-2xl border border-white/30 hover:bg-white/10 transition">Giriş Yap</a>
+        <a href="register.html" class="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-2xl font-semibold transition">Kayıt Ol</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero flex items-center justify-center pt-20">
+    <div class="text-center px-6 max-w-4xl mx-auto">
+      <h1 class="text-6xl md:text-7xl font-bold tracking-tighter leading-tight mb-6">
+        Fitness yolculuğun<br>
+        <span class="text-emerald-400">burada başlıyor</span>
+      </h1>
+      <p class="text-xl text-zinc-300 mb-10">Antrenmanlarını takip et, ilerlemeni gör ve en iyi versiyonuna ulaş.</p>
+      
+      <div class="flex flex-col sm:flex-row gap-5 justify-center">
+        <a href="register.html" class="bg-emerald-500 hover:bg-emerald-600 text-lg font-semibold px-10 py-5 rounded-3xl flex items-center justify-center gap-3 transition">
+          Hemen Başla
+        </a>
+        <a href="login.html" class="border-2 border-white/50 hover:border-white text-lg font-semibold px-10 py-5 rounded-3xl flex items-center justify-center gap-3 transition">
+          Giriş Yap
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Özellikler -->
+  <section id="ozellikler" class="py-20 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-4xl font-bold text-center mb-4">Güçlü Özellikler</h2>
+      <p class="text-center text-zinc-400 mb-12">Hedeflerine ulaşman için ihtiyacın olan her şey</p>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="feature-card bg-zinc-800 p-8 rounded-3xl border border-white/10">
+          <div class="text-5xl mb-6">📊</div>
+          <h3 class="text-2xl font-semibold mb-3">İlerleme Takibi</h3>
+          <p class="text-zinc-400">Her setini, kilosunu ve tekrarını kaydet. Detaylı grafikler ile gelişimini izle.</p>
+        </div>
+        <div class="feature-card bg-zinc-800 p-8 rounded-3xl border border-white/10">
+          <div class="text-5xl mb-6">🏋️</div>
+          <h3 class="text-2xl font-semibold mb-3">Antrenman Yönetimi</h3>
+          <p class="text-zinc-400">Kolayca antrenman ekle, geçmişini görüntüle.</p>
+        </div>
+        <div class="feature-card bg-zinc-800 p-8 rounded-3xl border border-white/10">
+          <div class="text-5xl mb-6">🥗</div>
+          <h3 class="text-2xl font-semibold mb-3">Beslenme Takibi</h3>
+          <p class="text-zinc-400">Kalori ve makro değerlerini kolayca takip et.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Nasıl Çalışır -->
+  <section id="nasil" class="py-20 bg-black">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-4xl font-bold text-center mb-12">Nasıl Çalışır?</h2>
+      <div class="grid md:grid-cols-3 gap-10">
+        <div class="text-center">
+          <div class="w-20 h-20 mx-auto bg-emerald-500/10 rounded-2xl flex items-center justify-center text-4xl mb-6">1️⃣</div>
+          <h3 class="text-xl font-semibold mb-3">Kayıt Ol</h3>
+          <p class="text-zinc-400">Hızlıca hesap oluştur ve profilini tamamla.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-20 h-20 mx-auto bg-emerald-500/10 rounded-2xl flex items-center justify-center text-4xl mb-6">2️⃣</div>
+          <h3 class="text-xl font-semibold mb-3">Antrenmanlarını Kaydet</h3>
+          <p class="text-zinc-400">Her antrenmanını kolayca ekle.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-20 h-20 mx-auto bg-emerald-500/10 rounded-2xl flex items-center justify-center text-4xl mb-6">3️⃣</div>
+          <h3 class="text-xl font-semibold mb-3">İlerlemeni İzle</h3>
+          <p class="text-zinc-400">Grafikler ve istatistiklerle gelişimini takip et.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black py-12 border-t border-white/10">
+    <div class="max-w-7xl mx-auto px-6 text-center text-zinc-500">
+      <p>&copy; 2026 FitTrack • Emirhan'ın Proje Ödevi</p>
+    </div>
+  </footer>
+
+  <script>
+    function checkLoginStatus() {
+      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+      const authButtons = document.getElementById("authButtons");
+      
+      if (isLoggedIn && authButtons) {
+        authButtons.innerHTML = `
+          <a href="dashboard.html" class="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-2xl font-semibold transition">
+            Dashboard'a Git
+          </a>
+          <button onclick="cikisYap()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-6 py-3 rounded-2xl transition">
+            Çıkış Yap
+          </button>
+        `;
+      }
+    }
+
+    function cikisYap() {
+      if (confirm("Çıkış yapmak istediğinden emin misin?")) {
+        localStorage.removeItem("isLoggedIn");
+        window.location.href = "index.html";
+      }
+    }
+
+    window.onload = checkLoginStatus;
+  </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Paneli - FitTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .card { background: #18181b; border: 1px solid #3f3f46; }
+    .user-row:hover { background: #27272a !important; }
+    .status-active { background: #10b98120; color: #10b981; }
+    .status-passive { background: #6b728020; color: #9ca3af; }
+    .status-banned { background: #ef444420; color: #ef4444; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center">
+    <div class="flex flex-col items-center">
+      <div class="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-white mt-6 text-lg font-medium">Yükleniyor...</p>
+    </div>
+  </div>
+
+  <!-- ========== DINAMIK SIDEBAR ========== -->
+  <div id="sidebar" class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col fixed h-screen"></div>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="main-content ml-72">
+    <div class="max-w-7xl mx-auto px-6 py-10">
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-4xl font-bold flex items-center gap-3">
+            <i class="fas fa-cogs text-pink-500"></i> Admin Paneli
+          </h1>
+          <p class="text-zinc-400">Kullanıcı yönetimi ve sistem kontrolü</p>
+        </div>
+        <button onclick="showAddUserModal()" 
+                class="bg-pink-600 hover:bg-pink-700 px-6 py-3 rounded-2xl flex items-center gap-2 transition">
+          <i class="fas fa-user-plus"></i> Yeni Kullanıcı Ekle
+        </button>
+      </div>
+
+      <!-- İstatistikler -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
+        <div class="lg:col-span-3 card p-8 rounded-3xl text-center">
+          <p class="text-zinc-400">Toplam Kullanıcı</p>
+          <h2 id="totalUsers" class="text-5xl font-bold text-violet-400 mt-3">248</h2>
+        </div>
+        <div class="lg:col-span-3 card p-8 rounded-3xl text-center">
+          <p class="text-zinc-400">Aktif Kullanıcı</p>
+          <h2 id="activeUsers" class="text-5xl font-bold text-emerald-400 mt-3">89</h2>
+        </div>
+        <div class="lg:col-span-6 card p-8 rounded-3xl">
+          <h3 class="font-semibold mb-4">Son 30 Gün Yeni Kayıt</h3>
+          <canvas id="userChart" height="110"></canvas>
+        </div>
+      </div>
+
+      <!-- Arama -->
+      <input type="text" id="searchInput" onkeyup="filterUsers()" 
+             placeholder="Kullanıcı ara..." 
+             class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-6 py-4 mb-6 focus:outline-none focus:border-pink-500">
+
+      <!-- Kullanıcı Tablosu -->
+      <div class="card p-8 rounded-3xl">
+        <h2 class="text-2xl font-semibold mb-6">Kullanıcı Yönetimi</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-zinc-700">
+                <th class="text-left py-5 px-6">ID</th>
+                <th class="text-left py-5 px-6">İsim</th>
+                <th class="text-left py-5 px-6">Email</th>
+                <th class="text-left py-5 px-6">Kayıt Tarihi</th>
+                <th class="text-left py-5 px-6">Durum</th>
+                <th class="text-center py-5 px-6">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <div id="addUserModal" class="modal">
+    <div class="bg-zinc-900 rounded-3xl p-8 w-full max-w-lg mx-4">
+      <h2 class="text-2xl font-bold mb-6">Yeni Kullanıcı Ekle</h2>
+      <div class="space-y-5">
+        <div>
+          <label class="block text-zinc-400 mb-1">Ad Soyad</label>
+          <input id="newName" type="text" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+        </div>
+        <div>
+          <label class="block text-zinc-400 mb-1">Email</label>
+          <input id="newEmail" type="email" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+        </div>
+        <div>
+          <label class="block text-zinc-400 mb-1">Şifre</label>
+          <input id="newPassword" type="password" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+        </div>
+      </div>
+      <div class="flex gap-4 mt-8">
+        <button onclick="closeAddModal()" class="flex-1 py-4 bg-zinc-700 rounded-2xl">İptal</button>
+        <button onclick="addNewUser()" class="flex-1 py-4 bg-pink-600 rounded-2xl">Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====================== ORTAK FONKSİYONLAR ======================
+    function showLoading() {
+      document.getElementById('loading').classList.remove('hidden');
+    }
+
+    function cikisYap() {
+      if (confirm("Çıkış yapmak istediğinden emin misin?")) {
+        showLoading();
+        setTimeout(() => {
+          localStorage.clear();
+          window.location.href = "index.html";
+        }, 800);
+      }
+    }
+
+    function isAdmin() {
+      return localStorage.getItem("isAdmin") === "true";
+    }
+
+    // ====================== DINAMIK SIDEBAR (Sadece Admin ve Dashboard) ======================
+    function renderSidebar() {
+      document.getElementById('sidebar').innerHTML = `
+        <div class="px-6 py-8">
+          <div class="flex items-center gap-3 mb-10 pl-3">
+            <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💪</div>
+            <h1 class="text-2xl font-bold text-white">FitTrack</h1>
+          </div>
+        </div>
+
+        <nav class="space-y-1 px-3">
+          <a href="dashboard.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-400 hover:text-white">
+            <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+          </a>
+          <a href="admin.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-800 text-pink-400">
+            <i class="fas fa-cogs"></i><span>👑 Admin Paneli</span>
+          </a>
+        </nav>
+
+        <div class="absolute bottom-8 w-full px-6">
+          <button onclick="cikisYap()" 
+                  class="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-4 rounded-2xl transition">
+            <i class="fas fa-sign-out-alt"></i><span>Çıkış Yap</span>
+          </button>
+        </div>
+      `;
+    }
+
+    // ====================== KULLANICI YÖNETİMİ ======================
+    let users = JSON.parse(localStorage.getItem('allUsers')) || [
+      { id: 1, name: "Emirhan Öğrenci", email: "test@fittrack.com", date: "2026-05-01", status: "Aktif" },
+      { id: 2, name: "Admin", email: "admin@fittrack.com", date: "2026-04-15", status: "Aktif" }
+    ];
+
+    function saveUsers() {
+      localStorage.setItem('allUsers', JSON.stringify(users));
+    }
+
+    function renderUsers(filteredUsers = users) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+
+      filteredUsers.forEach(user => {
+        const row = `
+          <tr class="user-row border-b border-zinc-800">
+            <td class="py-5 px-6">#${user.id}</td>
+            <td class="py-5 px-6 font-medium">${user.name}</td>
+            <td class="py-5 px-6">${user.email}</td>
+            <td class="py-5 px-6">${user.date}</td>
+            <td class="py-5 px-6">
+              <span class="px-4 py-1.5 rounded-full text-xs font-medium ${user.status === 'Aktif' ? 'status-active' : 'status-passive'}">
+                ${user.status}
+              </span>
+            </td>
+            <td class="py-5 px-6 text-center">
+              <button onclick="changeStatus(${user.id}, 'Aktif')" class="text-emerald-400 mx-2"><i class="fas fa-check"></i></button>
+              <button onclick="changeStatus(${user.id}, 'Pasif')" class="text-amber-400 mx-2"><i class="fas fa-pause"></i></button>
+              <button onclick="deleteUser(${user.id})" class="text-red-400 mx-2"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    function addNewUser() {
+      const name = document.getElementById('newName').value.trim();
+      const email = document.getElementById('newEmail').value.trim();
+
+      if (!name || !email) {
+        alert("Ad Soyad ve Email alanları zorunludur!");
+        return;
+      }
+
+      users.unshift({
+        id: Math.max(0, ...users.map(u => u.id)) + 1,
+        name,
+        email,
+        date: "2026-05-17",
+        status: "Aktif"
+      });
+
+      saveUsers();
+      renderUsers();
+      closeAddModal();
+      alert("✅ Yeni kullanıcı eklendi!");
+    }
+
+    function changeStatus(id, newStatus) {
+      const user = users.find(u => u.id === id);
+      if (user) user.status = newStatus;
+      saveUsers();
+      renderUsers();
+    }
+
+    function deleteUser(id) {
+      if (confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
+        users = users.filter(u => u.id !== id);
+        saveUsers();
+        renderUsers();
+      }
+    }
+
+    function filterUsers() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = users.filter(user => 
+        user.name.toLowerCase().includes(term) || 
+        user.email.toLowerCase().includes(term)
+      );
+      renderUsers(filtered);
+    }
+
+    function showAddUserModal() {
+      document.getElementById('addUserModal').style.display = "flex";
+    }
+
+    function closeAddModal() {
+      document.getElementById('addUserModal').style.display = "none";
+    }
+
+    // ====================== SAYFA YÜKLENDİĞİNDE ======================
+    window.onload = () => {
+      if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Bu sayfaya sadece Admin erişebilir!");
+        window.location.href = "dashboard.html";
+        return;
+      }
+
+      renderSidebar();
+      renderUsers();
+    };
+  </script>
+</body>
+</html>

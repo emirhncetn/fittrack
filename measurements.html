@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ölçümler - FitTrack</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  
+  <style>
+    .card { background: #18181b; border: 1px solid #3f3f46; }
+    .measurement-row:hover { background-color: #27272a; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <div id="sidebar" class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col fixed h-screen"></div>
+
+  <div class="main-content ml-72">
+    <div class="max-w-7xl mx-auto px-6 py-10">
+      <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">
+        <i class="fas fa-ruler-combined text-emerald-500"></i> Vücut Ölçümlerim
+      </h1>
+      <p class="text-zinc-400 mb-10">Vücut gelişimini takip et</p>
+
+      <!-- Son Durum Özeti -->
+      <div id="summaryCard" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Yeni Ölçü Ekle -->
+        <div class="card p-8 rounded-3xl">
+          <h2 class="text-2xl font-semibold mb-6">Yeni Ölçü Ekle</h2>
+          <form id="measurementForm" class="space-y-6">
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <label class="block text-zinc-400 mb-2">Tarih</label>
+                <input type="date" id="date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+              <div>
+                <label class="block text-zinc-400 mb-2">Cinsiyet</label>
+                <select id="gender" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+                  <option value="male">Erkek</option>
+                  <option value="female">Kadın</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <label class="block text-zinc-400 mb-2">Kilo (kg)</label>
+                <input type="number" step="0.1" id="weight" required class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+              <div>
+                <label class="block text-zinc-400 mb-2">Boy (cm)</label>
+                <input type="number" id="height" required class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <label class="block text-zinc-400 mb-2">Göğüs (cm)</label>
+                <input type="number" id="chest" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+              <div>
+                <label class="block text-zinc-400 mb-2">Bel (cm)</label>
+                <input type="number" id="waist" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+              <div>
+                <label class="block text-zinc-400 mb-2">Kalça (cm)</label>
+                <input type="number" id="hip" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+              <div>
+                <label class="block text-zinc-400 mb-2">Kol (cm)</label>
+                <input type="number" id="arm" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 py-5 rounded-3xl text-lg font-semibold transition">
+              Ölçüyü Kaydet
+            </button>
+          </form>
+        </div>
+
+        <!-- Kilo Grafiği -->
+        <div class="card p-8 rounded-3xl">
+          <h2 class="text-2xl font-semibold mb-6">Kilo İlerlemesi</h2>
+          <div style="height: 380px;">
+            <canvas id="weightChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Geçmiş Ölçümler -->
+      <div class="card p-8 rounded-3xl mt-8">
+        <h2 class="text-2xl font-semibold mb-6">Geçmiş Ölçümler</h2>
+        <div class="overflow-x-auto">
+          <table id="measurementsTable" class="w-full">
+            <thead>
+              <tr class="border-b border-zinc-700">
+                <th class="text-left py-5 px-6">Tarih</th>
+                <th class="text-left py-5 px-6">Kilo</th>
+                <th class="text-left py-5 px-6">BMI</th>
+                <th class="text-left py-5 px-6">Yağ Oranı %</th>
+                <th class="text-left py-5 px-6">Göğüs</th>
+                <th class="text-left py-5 px-6">Bel</th>
+                <th class="text-left py-5 px-6">Kalça</th>
+                <th class="text-center py-5 px-6">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let measurements = [];
+
+    function renderSidebar() {
+      const isAdmin = localStorage.getItem("isAdmin") === "true";
+      
+      document.getElementById('sidebar').innerHTML = `
+        <div class="px-6 py-8">
+          <div class="flex items-center gap-3 mb-10 pl-3">
+            <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💪</div>
+            <h1 class="text-2xl font-bold text-white">FitTrack</h1>
+          </div>
+        </div>
+
+        <nav class="space-y-1 px-3">
+          <a href="dashboard.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-tachometer-alt w-5"></i><span>Dashboard</span>
+          </a>
+          <a href="add-workout.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-plus-circle w-5"></i><span>Antrenman Ekle</span>
+          </a>
+          <a href="history.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-history w-5"></i><span>Geçmiş</span>
+          </a>
+          <a href="nutrition.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-apple-alt w-5"></i><span>Beslenme Takibi</span>
+          </a>
+          <a href="measurements.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-600 text-white">
+            <i class="fas fa-ruler-combined w-5"></i><span>Ölçümler</span>
+          </a>
+          <a href="profile.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-user w-5"></i><span>Profil</span>
+          </a>
+          ${isAdmin ? `
+          <a href="admin.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-pink-400 mt-8">
+            <i class="fas fa-cogs w-5"></i><span>Admin Paneli</span>
+          </a>` : ''}
+        </nav>
+
+        <div class="absolute bottom-8 w-full px-6">
+          <button onclick="cikisYap()" class="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 py-4 rounded-2xl transition font-medium">
+            <i class="fas fa-sign-out-alt"></i><span>Çıkış Yap</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function calculateBMI(weight, heightCm) {
+      if (!weight || !heightCm) return null;
+      const heightM = heightCm / 100;
+      return (weight / (heightM * heightM)).toFixed(1);
+    }
+
+    function calculateBodyFat(weight, waist, gender) {
+      if (!waist) return null;
+      if (gender === "male") return (weight * 1.2 + waist * 0.23 - 16.2).toFixed(1);
+      return (weight * 1.2 + waist * 0.23 - 5.4).toFixed(1);
+    }
+
+    function getBMIStatus(bmi) {
+      if (bmi < 18.5) return { text: "Zayıf", color: "bg-blue-500" };
+      if (bmi < 25) return { text: "Normal", color: "bg-emerald-500" };
+      if (bmi < 30) return { text: "Fazla Kilolu", color: "bg-yellow-500" };
+      return { text: "Obez", color: "bg-red-500" };
+    }
+
+    function loadMeasurements() {
+      const saved = localStorage.getItem('measurements');
+      if (saved) measurements = JSON.parse(saved);
+    }
+
+    function saveMeasurements() {
+      localStorage.setItem('measurements', JSON.stringify(measurements));
+    }
+
+    function renderSummary() {
+      if (measurements.length === 0) {
+        document.getElementById('summaryCard').innerHTML = '';
+        return;
+      }
+      const latest = measurements[measurements.length - 1];
+      const bmi = calculateBMI(latest.weight, latest.height);
+      const bodyFat = calculateBodyFat(latest.weight, latest.waist, latest.gender);
+
+      let html = '';
+      if (bmi) {
+        const status = getBMIStatus(parseFloat(bmi));
+        html += `
+          <div class="card p-6 rounded-3xl">
+            <p class="text-zinc-400">BMI</p>
+            <p class="text-5xl font-bold mt-2">${bmi}</p>
+            <span class="${status.color} text-white text-sm px-4 py-1 rounded-full mt-2 inline-block">${status.text}</span>
+          </div>`;
+      }
+      if (bodyFat) {
+        html += `
+          <div class="card p-6 rounded-3xl">
+            <p class="text-zinc-400">Tahmini Yağ Oranı</p>
+            <p class="text-5xl font-bold mt-2">${bodyFat}%</p>
+          </div>`;
+      }
+      document.getElementById('summaryCard').innerHTML = html;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      measurements.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      measurements.forEach((m, index) => {
+        const bmi = calculateBMI(m.weight, m.height);
+        const bodyFat = calculateBodyFat(m.weight, m.waist, m.gender);
+        const status = bmi ? getBMIStatus(parseFloat(bmi)) : null;
+
+        tbody.innerHTML += `
+          <tr class="measurement-row border-b border-zinc-700">
+            <td class="py-5 px-6">${new Date(m.date).toLocaleDateString('tr-TR')}</td>
+            <td class="py-5 px-6 font-bold">${m.weight} kg</td>
+            <td class="py-5 px-6">${bmi ? `<span class="${status.color} font-semibold">${bmi}</span>` : '-'}</td>
+            <td class="py-5 px-6">${bodyFat ? bodyFat + '%' : '-'}</td>
+            <td class="py-5 px-6">${m.chest || '-'}</td>
+            <td class="py-5 px-6">${m.waist || '-'}</td>
+            <td class="py-5 px-6">${m.hip || '-'}</td>
+            <td class="py-5 px-6 text-center">
+              <button onclick="deleteMeasurement(${index})" class="text-red-400 hover:text-red-500">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>`;
+      });
+
+      if (measurements.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-zinc-500">Henüz ölçüm eklenmedi.</td></tr>`;
+      }
+    }
+
+    function createChart() {
+      const ctx = document.getElementById('weightChart');
+      if (window.weightChartInstance) window.weightChartInstance.destroy();
+
+      const sorted = [...measurements].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      window.weightChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sorted.map(m => new Date(m.date).toLocaleDateString('tr-TR', {day:'numeric', month:'short'})),
+          datasets: [{
+            label: 'Kilo (kg)',
+            data: sorted.map(m => m.weight),
+            borderColor: '#10b981',
+            tension: 0.3,
+            borderWidth: 3
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Form Submit
+    document.getElementById('measurementForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const newMeasurement = {
+        date: document.getElementById('date').value,
+        gender: document.getElementById('gender').value,
+        weight: parseFloat(document.getElementById('weight').value),
+        height: parseFloat(document.getElementById('height').value),
+        chest: parseFloat(document.getElementById('chest').value) || null,
+        waist: parseFloat(document.getElementById('waist').value) || null,
+        hip: parseFloat(document.getElementById('hip').value) || null,
+        arm: parseFloat(document.getElementById('arm').value) || null
+      };
+
+      if (!newMeasurement.date || !newMeasurement.weight || !newMeasurement.height) {
+        alert("Tarih, Kilo ve Boy alanları zorunludur!");
+        return;
+      }
+
+      measurements.push(newMeasurement);
+      saveMeasurements();
+      renderTable();
+      renderSummary();
+      createChart();
+
+      this.reset();
+      alert("✅ Ölçüm başarıyla kaydedildi!");
+    });
+
+    function deleteMeasurement(index) {
+      if (confirm("Bu ölçümü silmek istediğinden emin misin?")) {
+        measurements.splice(index, 1);
+        saveMeasurements();
+        renderTable();
+        renderSummary();
+        createChart();
+      }
+    }
+
+    function cikisYap() {
+      if (confirm("Çıkış yapmak istediğinden emin misin?")) {
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("isAdmin");
+        window.location.href = "index.html";
+      }
+    }
+
+    function saveMeasurements() {
+      localStorage.setItem('measurements', JSON.stringify(measurements));
+    }
+
+    function loadMeasurements() {
+      const saved = localStorage.getItem('measurements');
+      if (saved) measurements = JSON.parse(saved);
+    }
+
+    window.onload = () => {
+      renderSidebar();
+      loadMeasurements();
+      renderTable();
+      renderSummary();
+      createChart();
+    };
+  </script>
+</body>
+</html>

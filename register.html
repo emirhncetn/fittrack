@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kayıt Ol - FitTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    .register-bg {
+      background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.85)), 
+                        url('images/dene.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="register-bg flex items-center justify-center text-white">
+  
+  <div class="max-w-md w-full mx-4">
+    <div class="text-center mb-10">
+      <h1 class="text-5xl font-bold text-emerald-400 tracking-tighter">FitTrack</h1>
+      <p class="text-zinc-300 mt-2">Yeni yolculuğa başla</p>
+    </div>
+
+    <div class="bg-zinc-900/95 backdrop-blur-lg p-10 rounded-3xl border border-white/10 shadow-2xl">
+      <form onsubmit="handleRegister(event)">
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div>
+            <label class="block text-sm text-zinc-400 mb-2">Ad</label>
+            <input type="text" id="firstName" value="Emirhan" 
+                   class="w-full bg-zinc-800 border border-white/20 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-sm text-zinc-400 mb-2">Soyad</label>
+            <input type="text" id="lastName" value="Öğrenci" 
+                   class="w-full bg-zinc-800 border border-white/20 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm text-zinc-400 mb-2">E-posta</label>
+          <input type="email" id="email" value="test@fittrack.com" 
+                 class="w-full bg-zinc-800 border border-white/20 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500">
+        </div>
+        
+        <div class="mb-8">
+          <label class="block text-sm text-zinc-400 mb-2">Şifre</label>
+          <input type="password" id="password" value="123456" 
+                 class="w-full bg-zinc-800 border border-white/20 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500">
+        </div>
+        
+        <button type="submit" 
+                class="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-2xl font-semibold text-lg transition">
+          Kayıt Ol ve Başla
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center mt-8 text-zinc-400">
+      Zaten hesabın var mı? 
+      <a href="login.html" class="text-emerald-400 hover:underline font-medium">Giriş Yap</a>
+    </p>
+  </div>
+
+  <script>
+    function handleRegister(e) {
+      e.preventDefault();
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userName", "Emirhan");
+      
+      alert("✅ Kayıt başarılı! Hoş geldin 👋");
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</body>
+</html>

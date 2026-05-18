@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - FitTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .stat-card {
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    #progressChart {
+      max-height: 320px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      margin: 4px 0;
+      border-radius: 12px;
+      color: #a1a1aa;
+      transition: all 0.2s;
+    }
+    .nav-item:hover, .nav-item.active {
+      background-color: #27272a;
+      color: white;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center">
+    <div class="flex flex-col items-center">
+      <div class="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-white mt-6 text-lg font-medium">Yükleniyor...</p>
+    </div>
+  </div>
+
+  <!-- ========== DINAMIK SIDEBAR ========== -->
+  <div id="sidebar" class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col fixed h-screen"></div>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="main-content ml-72">
+    <div class="max-w-7xl mx-auto px-6 py-10">
+      <h1 class="text-4xl font-bold mb-2" id="welcomeText">Dashboard</h1>
+      <p class="text-zinc-400 mb-10">Bugün nasılsın? Hadi devam edelim! 🔥</p>
+
+      <!-- İstatistik Kartları -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <!-- Kartlarınız aynı kalıyor -->
+        <div class="stat-card bg-zinc-900 p-6 rounded-3xl border border-white/10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-zinc-400 text-sm">Bu Hafta</p>
+              <p class="text-4xl font-bold mt-2">4</p>
+              <p class="text-emerald-400 text-sm mt-1">Antrenman</p>
+            </div>
+            <i class="fas fa-dumbbell text-4xl text-emerald-500/30"></i>
+          </div>
+        </div>
+
+        <div class="stat-card bg-zinc-900 p-6 rounded-3xl border border-white/10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-zinc-400 text-sm">Toplam Kaldırılan</p>
+              <p class="text-4xl font-bold mt-2">12.450</p>
+              <p class="text-emerald-400 text-sm mt-1">kg</p>
+            </div>
+            <i class="fas fa-weight-hanging text-4xl text-emerald-500/30"></i>
+          </div>
+        </div>
+
+        <div class="stat-card bg-zinc-900 p-6 rounded-3xl border border-white/10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-zinc-400 text-sm">Streak</p>
+              <p class="text-4xl font-bold mt-2">7</p>
+              <p class="text-orange-400 text-sm mt-1">gün</p>
+            </div>
+            <i class="fas fa-fire text-4xl text-orange-500/30"></i>
+          </div>
+        </div>
+
+        <div class="stat-card bg-zinc-900 p-6 rounded-3xl border border-white/10">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-zinc-400 text-sm">Vücut Ağırlığı</p>
+              <p class="text-4xl font-bold mt-2">78</p>
+              <p class="text-emerald-400 text-sm mt-1">kg</p>
+            </div>
+            <i class="fas fa-scale-balanced text-4xl text-emerald-500/30"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- İlerleme Grafiği -->
+      <div class="bg-zinc-900 rounded-3xl p-8 border border-white/10 mb-12">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-semibold">Son 7 Gün İlerlemesi</h2>
+          <span class="text-emerald-400 text-sm">Antrenman Süresi (dk)</span>
+        </div>
+        <div style="height: 340px;">
+          <canvas id="progressChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Hızlı Aksiyon -->
+      <div class="bg-zinc-900 rounded-3xl p-8 border border-white/10 mb-12">
+        <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+          <i class="fas fa-plus"></i>
+          Bugün Antrenman Ekle
+        </h2>
+        <a href="add-workout.html" 
+           class="inline-flex items-center gap-3 bg-emerald-500 hover:bg-emerald-600 text-lg font-semibold px-10 py-5 rounded-3xl transition">
+          <i class="fas fa-dumbbell"></i>
+          Yeni Antrenman Başlat
+        </a>
+      </div>
+
+      <!-- Son Antrenmanlar -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-6">Son Antrenmanlar</h2>
+        <div id="recentWorkouts" class="space-y-4">
+          <!-- JavaScript ile doldurulacak -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====================== ORTAK VERİTABANI FONKSİYONLARI ======================
+    function getAllWorkouts() {
+      return JSON.parse(localStorage.getItem('workouts')) || [];
+    }
+
+    function isAdmin() {
+      return localStorage.getItem("isAdmin") === "true";
+    }
+
+    function getCurrentUser() {
+      return {
+        name: localStorage.getItem("userName") || "Kullanıcı",
+        isAdmin: isAdmin()
+      };
+    }
+
+    // ====================== DINAMIK SIDEBAR ======================
+    function renderSidebar() {
+      const user = getCurrentUser();
+      
+      const adminLink = user.isAdmin ? `
+        <a href="admin.html" class="nav-item mt-8 text-pink-400">
+          <i class="fas fa-cogs"></i>
+          <span>👑 Admin Paneli</span>
+        </a>` : '';
+
+      document.getElementById('sidebar').innerHTML = `
+        <div class="px-6 py-8">
+          <div class="flex items-center gap-3 mb-10 pl-3">
+            <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💪</div>
+            <h1 class="text-2xl font-bold text-white">FitTrack</h1>
+          </div>
+        </div>
+
+        <nav class="space-y-1 px-3">
+          <a href="dashboard.html" class="nav-item active">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="add-workout.html" class="nav-item">
+            <i class="fas fa-plus-circle"></i>
+            <span>Antrenman Ekle</span>
+          </a>
+          <a href="history.html" class="nav-item">
+            <i class="fas fa-history"></i>
+            <span>Geçmiş</span>
+          </a>
+          <a href="nutrition.html" class="nav-item">
+            <i class="fas fa-apple-alt"></i>
+            <span>Beslenme Takibi</span>
+          </a>
+          <a href="measurements.html" class="nav-item">
+            <i class="fas fa-ruler-combined"></i>
+            <span>Ölçümler</span>
+          </a>
+          <a href="profile.html" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Profil</span>
+          </a>
+          ${adminLink}
+        </nav>
+
+        <div class="absolute bottom-8 w-full px-6">
+          <button onclick="cikisYap()" 
+                  class="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 py-4 rounded-2xl transition font-medium">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Çıkış Yap</span>
+          </button>
+        </div>
+      `;
+    }
+
+    // ====================== MEVCUT FONKSİYONLAR ======================
+    function cikisYap() {
+      if (confirm("Çıkış yapmak istediğinden emin misin?")) {
+        document.getElementById('loading').classList.remove('hidden');
+        setTimeout(() => {
+          localStorage.clear(); // Tüm verileri temizle
+          window.location.href = "index.html";
+        }, 800);
+      }
+    }
+
+    function createProgressChart() {
+      const ctx = document.getElementById('progressChart');
+      if (!ctx) return;
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+          datasets: [{
+            label: 'Süre (dakika)',
+            data: [45, 60, 30, 75, 50, 90, 65],
+            backgroundColor: '#10b981',
+            borderRadius: 12,
+            barThickness: 32,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 120, grid: { color: '#27272a' }, ticks: { color: '#71717a' }},
+            x: { grid: { color: '#27272a' }, ticks: { color: '#71717a' }}
+          }
+        }
+      });
+    }
+
+    function loadRecentWorkouts() {
+      const workouts = getAllWorkouts();
+      const container = document.getElementById('recentWorkouts');
+      
+      if (workouts.length === 0) {
+        container.innerHTML = `<p class="text-zinc-400">Henüz antrenman eklenmedi.</p>`;
+        return;
+      }
+
+      container.innerHTML = workouts.slice(0, 3).map(w => `
+        <div class="bg-zinc-900 p-6 rounded-3xl border border-white/10 flex justify-between items-center">
+          <div>
+            <p class="font-medium">${w.name}</p>
+            <p class="text-sm text-zinc-400">${new Date(w.date).toLocaleDateString('tr-TR')} • ${w.duration} dakika</p>
+          </div>
+          <span class="text-emerald-400 font-medium">Tamamlandı ✓</span>
+        </div>
+      `).join('');
+    }
+
+    // ====================== SAYFA YÜKLENDİĞİNDE ======================
+    window.onload = () => {
+      renderSidebar();
+      createProgressChart();
+      loadRecentWorkouts();
+    };
+  </script>
+</body>
+</html>

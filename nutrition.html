@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beslenme Takibi - FitTrack</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .card { background: #18181b; border: 1px solid #3f3f46; }
+    .food-item:hover { transform: translateX(8px); }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <div id="sidebar" class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col fixed h-screen"></div>
+
+  <div class="main-content ml-72">
+    <div class="max-w-6xl mx-auto px-6 py-10">
+      <div class="flex justify-between items-end mb-10">
+        <div>
+          <h1 class="text-4xl font-bold flex items-center gap-3">
+            🍏 Beslenme Takibi
+          </h1>
+          <p class="text-zinc-400">Günlük kalori ve makro besinlerini takip et</p>
+        </div>
+        <button onclick="openTargetModal()" 
+                class="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-2xl flex items-center gap-2">
+          <i class="fas fa-target"></i> Hedef Ayarla
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Kalori Kartı -->
+        <div class="lg:col-span-5 card rounded-3xl p-8">
+          <p class="text-zinc-400">Bugün Tüketilen</p>
+          <div class="flex items-baseline gap-3 mt-6">
+            <span id="current-cal" class="text-7xl font-bold text-emerald-400">0</span>
+            <span class="text-3xl text-zinc-500">/ <span id="daily-goal">2500</span> kcal</span>
+          </div>
+          <div class="mt-6 h-4 bg-zinc-800 rounded-2xl overflow-hidden">
+            <div id="cal-progress" class="h-full bg-emerald-500 rounded-2xl transition-all" style="width: 0%"></div>
+          </div>
+          <p id="remaining-cal" class="text-right text-sm text-zinc-400 mt-2">2500 kcal kaldı</p>
+        </div>
+
+        <!-- Makro -->
+        <div class="lg:col-span-7 card rounded-3xl p-8">
+          <h3 class="font-semibold mb-6">Bugünkü Makro Dağılımı</h3>
+          <div class="grid grid-cols-3 gap-8 text-center">
+            <div>
+              <div class="text-4xl mb-2">🍗</div>
+              <p id="protein-g" class="text-4xl font-bold text-emerald-400">0</p>
+              <p class="text-zinc-400">Protein</p>
+            </div>
+            <div>
+              <div class="text-4xl mb-2">🥑</div>
+              <p id="fat-g" class="text-4xl font-bold text-amber-400">0</p>
+              <p class="text-zinc-400">Yağ</p>
+            </div>
+            <div>
+              <div class="text-4xl mb-2">🍚</div>
+              <p id="carb-g" class="text-4xl font-bold text-sky-400">0</p>
+              <p class="text-zinc-400">Karbonhidrat</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Haftalık Grafik -->
+        <div class="lg:col-span-12 card rounded-3xl p-8">
+          <h3 class="font-semibold mb-6">Haftalık Kalori Tüketimi</h3>
+          <canvas id="weeklyChart" height="110"></canvas>
+        </div>
+
+        <!-- Bugün Yedikler -->
+        <div class="lg:col-span-12 card rounded-3xl p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold">Bugün Yediklerin</h3>
+            <button onclick="openFoodModal()" 
+                    class="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-2xl flex items-center gap-2">
+              <i class="fas fa-plus"></i> Yemek Ekle
+            </button>
+          </div>
+          <div id="foodList" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yemek Ekle Modal -->
+  <div id="foodModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-zinc-900 rounded-3xl w-full max-w-lg mx-4 p-8">
+      <h2 class="text-2xl font-bold mb-6">Yemek Ekle</h2>
+      
+      <select id="commonFoods" onchange="fillCommonFood()" class="w-full bg-zinc-800 rounded-2xl px-5 py-4 mb-6">
+        <option value="">Hızlı Seçim...</option>
+        <option value="yulaf">Yulaf + Muz (380 kcal)</option>
+        <option value="tavuk">Tavuk Göğüs + Pilav (620 kcal)</option>
+        <option value="omlet">Omlet + Peynir (450 kcal)</option>
+        <option value="salata">Tavuklu Salata (320 kcal)</option>
+      </select>
+
+      <input id="foodName" type="text" placeholder="Yemek adı" class="w-full bg-zinc-800 rounded-2xl px-5 py-4 mb-4">
+      
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <label class="text-sm text-zinc-400">Kalori</label>
+          <input id="foodCal" type="number" class="w-full bg-zinc-800 rounded-2xl px-5 py-4">
+        </div>
+        <div>
+          <label class="text-sm text-zinc-400">Protein (g)</label>
+          <input id="foodProtein" type="number" class="w-full bg-zinc-800 rounded-2xl px-5 py-4">
+        </div>
+      </div>
+
+      <div class="flex gap-4 mt-10">
+        <button onclick="closeFoodModal()" class="flex-1 py-4 border border-zinc-700 rounded-2xl hover:bg-zinc-800">İptal</button>
+        <button onclick="addFood()" class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-2xl">Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hedef Ayarla Modal -->
+  <div id="targetModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-zinc-900 rounded-3xl w-full max-w-md mx-4 p-8">
+      <h2 class="text-2xl font-bold mb-6">Günlük Kalori Hedefi</h2>
+      <input id="newTarget" type="number" value="2500" class="w-full bg-zinc-800 rounded-2xl px-5 py-4 text-3xl text-center">
+      <div class="flex gap-4 mt-10">
+        <button onclick="closeTargetModal()" class="flex-1 py-4 border border-zinc-700 rounded-2xl hover:bg-zinc-800">İptal</button>
+        <button onclick="saveTarget()" class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-2xl">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let dailyFoods = [];
+    let dailyGoal = 2500;
+    let weeklyChart;
+
+    function renderSidebar() {
+      const isAdmin = localStorage.getItem("isAdmin") === "true";
+      document.getElementById('sidebar').innerHTML = `
+        <div class="px-6 py-8">
+          <div class="flex items-center gap-3 mb-10 pl-3">
+            <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💪</div>
+            <h1 class="text-2xl font-bold text-white">FitTrack</h1>
+          </div>
+        </div>
+        <nav class="space-y-1 px-3">
+          <a href="dashboard.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-tachometer-alt w-5"></i><span>Dashboard</span>
+          </a>
+          <a href="add-workout.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-plus-circle w-5"></i><span>Antrenman Ekle</span>
+          </a>
+          <a href="history.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-history w-5"></i><span>Geçmiş</span>
+          </a>
+          <a href="nutrition.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-600 text-white">
+            <i class="fas fa-apple-alt w-5"></i><span>Beslenme Takibi</span>
+          </a>
+          <a href="measurements.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-ruler-combined w-5"></i><span>Ölçümler</span>
+          </a>
+          <a href="profile.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800">
+            <i class="fas fa-user w-5"></i><span>Profil</span>
+          </a>
+          ${isAdmin ? `<a href="admin.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-pink-400 mt-8"><i class="fas fa-cogs w-5"></i><span>Admin Paneli</span></a>` : ''}
+        </nav>
+        <div class="absolute bottom-8 w-full px-6">
+          <button onclick="cikisYap()" class="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-4 rounded-2xl">
+            <i class="fas fa-sign-out-alt"></i><span>Çıkış Yap</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function loadNutritionData() {
+      const saved = localStorage.getItem('dailyFoods');
+      if (saved) dailyFoods = JSON.parse(saved);
+    }
+
+    function saveNutritionData() {
+      localStorage.setItem('dailyFoods', JSON.stringify(dailyFoods));
+    }
+
+    function renderFoodList() {
+      const container = document.getElementById('foodList');
+      container.innerHTML = '';
+
+      if (dailyFoods.length === 0) {
+        container.innerHTML = `<p class="text-zinc-500 text-center py-12">Henüz yemek eklenmedi...</p>`;
+        return;
+      }
+
+      dailyFoods.forEach((food, i) => {
+        container.innerHTML += `
+          <div class="food-item bg-zinc-800 rounded-2xl p-5 flex justify-between items-center">
+            <div>
+              <p class="font-medium">${food.name}</p>
+              <p class="text-sm text-zinc-400">${food.cal} kcal • ${food.protein}g protein</p>
+            </div>
+            <button onclick="removeFood(${i})" class="text-red-400 hover:text-red-500 p-2">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>`;
+      });
+    }
+
+    function updateSummary() {
+      let totalCal = dailyFoods.reduce((sum, f) => sum + f.cal, 0);
+      let totalProtein = dailyFoods.reduce((sum, f) => sum + (f.protein || 0), 0);
+
+      document.getElementById('current-cal').textContent = totalCal;
+      const progress = Math.min((totalCal / dailyGoal) * 100, 100);
+      document.getElementById('cal-progress').style.width = `${progress}%`;
+      document.getElementById('remaining-cal').textContent = `${Math.max(dailyGoal - totalCal, 0)} kcal kaldı`;
+
+      document.getElementById('protein-g').textContent = totalProtein;
+      document.getElementById('fat-g').textContent = Math.round(totalCal * 0.3 / 9);
+      document.getElementById('carb-g').textContent = Math.round(totalCal * 0.5 / 4);
+    }
+
+    function createWeeklyChart() {
+      if (weeklyChart) weeklyChart.destroy();
+      const todayCal = dailyFoods.reduce((sum, f) => sum + f.cal, 0);
+      const data = [2100, 2450, 1980, 2650, 2300, 2200, todayCal];
+
+      weeklyChart = new Chart(document.getElementById('weeklyChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Bugün'],
+          datasets: [{ label: 'Kalori', data: data, backgroundColor: '#10b981', borderRadius: 8 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false }}}
+      });
+    }
+
+    function openFoodModal() {
+      document.getElementById('foodModal').classList.remove('hidden');
+    }
+
+    function closeFoodModal() {
+      document.getElementById('foodModal').classList.add('hidden');
+    }
+
+    function fillCommonFood() {
+      // ... (mevcut fonksiyon)
+      const val = document.getElementById('commonFoods').value;
+      if (val === "yulaf") { document.getElementById('foodName').value = "Yulaf + Muz"; document.getElementById('foodCal').value = 380; document.getElementById('foodProtein').value = 12; }
+      else if (val === "tavuk") { document.getElementById('foodName').value = "Tavuk Göğüs + Pilav"; document.getElementById('foodCal').value = 620; document.getElementById('foodProtein').value = 45; }
+      else if (val === "omlet") { document.getElementById('foodName').value = "Omlet + Peynir"; document.getElementById('foodCal').value = 450; document.getElementById('foodProtein').value = 28; }
+      else if (val === "salata") { document.getElementById('foodName').value = "Tavuklu Salata"; document.getElementById('foodCal').value = 320; document.getElementById('foodProtein').value = 35; }
+    }
+
+    function addFood() {
+      const name = document.getElementById('foodName').value.trim();
+      const cal = parseInt(document.getElementById('foodCal').value) || 0;
+      const protein = parseInt(document.getElementById('foodProtein').value) || 0;
+
+      if (!name || cal <= 0) return alert("Yemek adı ve kalori girmelisiniz!");
+
+      dailyFoods.push({ name, cal, protein });
+      saveNutritionData();
+      renderFoodList();
+      updateSummary();
+      createWeeklyChart();
+      closeFoodModal();
+    }
+
+    function removeFood(i) {
+      if (confirm("Bu yemeği silmek istediğinden emin misin?")) {
+        dailyFoods.splice(i, 1);
+        saveNutritionData();
+        renderFoodList();
+        updateSummary();
+        createWeeklyChart();
+      }
+    }
+
+    function openTargetModal() {
+      document.getElementById('newTarget').value = dailyGoal;
+      document.getElementById('targetModal').classList.remove('hidden');
+    }
+
+    function closeTargetModal() {
+      document.getElementById('targetModal').classList.add('hidden');
+    }
+
+    function saveTarget() {
+      dailyGoal = parseInt(document.getElementById('newTarget').value) || 2500;
+      document.getElementById('daily-goal').textContent = dailyGoal;
+      updateSummary();
+      closeTargetModal();
+    }
+
+    function cikisYap() {
+      if (confirm("Çıkış yapmak istediğinden emin misin?")) {
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("isAdmin");
+        window.location.href = "index.html";
+      }
+    }
+
+    window.onload = () => {
+      renderSidebar();
+      loadNutritionData();
+      renderFoodList();
+      updateSummary();
+      createWeeklyChart();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giriş Yap - FitTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    .login-bg {
+      background-image: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), 
+                        url('images/dene.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="login-bg flex items-center justify-center text-white">
+  
+  <div class="max-w-md w-full mx-4">
+    <div class="text-center mb-10">
+      <h1 class="text-5xl font-bold text-emerald-400 tracking-tighter">FitTrack</h1>
+      <p class="text-zinc-300 mt-2">Tekrar hoş geldin</p>
+    </div>
+
+    <div class="bg-zinc-900/95 backdrop-blur-lg p-10 rounded-3xl border border-white/10 shadow-2xl">
+      <form onsubmit="handleLogin(event)">
+        <div class="mb-6">
+          <label class="block text-sm text-zinc-400 mb-2">E-posta</label>
+          <input type="email" id="email" 
+                 class="w-full bg-zinc-800 border border-white/20 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500 transition"
+                 placeholder="ornek@email.com" required>
+        </div>
+        <div class="mb-8">
+          <label class="block text-sm text-zinc-400 mb-2">Şifre</label>
+          <input type="password" id="password" 
+                 class="w-full bg-zinc-800 border border-white/20 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500 transition"
+                 placeholder="••••••••" required>
+        </div>
+        
+        <button type="submit" 
+                class="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-2xl font-semibold text-lg transition">
+          Giriş Yap
+        </button>
+      </form>
+
+      <div id="errorMessage" class="hidden mt-4 text-red-400 text-center text-sm"></div>
+    </div>
+
+    <p class="text-center mt-8 text-zinc-400">
+      Hesabın yok mu? 
+      <a href="register.html" class="text-emerald-400 hover:underline font-medium">Kayıt Ol</a>
+    </p>
+
+    <!-- Test Bilgileri -->
+    <div class="text-center mt-8 text-xs text-zinc-500">
+      <p><strong>Test Hesapları:</strong></p>
+      <p>Admin → <code>admin@fittrack.com</code> / <code>admin123</code></p>
+      <p>Normal → <code>test@fittrack.com</code> / <code>123456</code></p>
+    </div>
+  </div>
+
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('errorMessage');
+
+      if (!email || !password) {
+        showError("E-posta ve şifre alanlarını doldurun!");
+        return;
+      }
+
+      let userName = "Kullanıcı";
+      let isAdmin = false;
+
+      // Admin Girişi
+      if (email === "admin@fittrack.com" && password === "admin123") {
+        userName = "Admin";
+        isAdmin = true;
+      } 
+      // Normal Kullanıcı
+      else if (email === "test@fittrack.com" && password === "123456") {
+        userName = "Emirhan";
+        isAdmin = false;
+      } 
+      else {
+        showError("E-posta veya şifre hatalı!");
+        return;
+      }
+
+      // Ortak Veritabanı Bilgileri
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("isAdmin", isAdmin);
+      localStorage.setItem("userName", userName);
+      localStorage.setItem("userEmail", email);
+
+      alert(`✅ ${isAdmin ? 'Admin' : 'Kullanıcı'} girişi başarılı!`);
+      window.location.href = "dashboard.html";
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.classList.remove('hidden');
+      setTimeout(() => errorDiv.classList.add('hidden'), 4000);
+    }
+  </script>
+</body>
+</html>

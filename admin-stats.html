@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İstatistikler & Raporlar - FitTrack Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-zinc-950 text-white">
+
+  <div class="flex h-screen">
+    <div id="sidebar" class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col"></div>
+
+    <div class="flex-1 overflow-auto">
+      <div class="max-w-7xl mx-auto px-6 py-10">
+        
+        <div class="flex justify-between items-end mb-8">
+          <div>
+            <h1 class="text-4xl font-bold flex items-center gap-3">
+              <i class="fas fa-chart-bar text-pink-500"></i> İstatistikler & Raporlar
+            </h1>
+            <p class="text-zinc-400">Gerçek zamanlı sistem performansı</p>
+          </div>
+          <button onclick="exportToCSV()" 
+                  class="bg-pink-600 hover:bg-pink-500 px-6 py-3 rounded-2xl flex items-center gap-3 font-medium transition">
+            <i class="fas fa-download"></i> Rapor İndir (CSV)
+          </button>
+        </div>
+
+        <!-- Tarih Filtre -->
+        <div class="flex gap-3 mb-8 flex-wrap">
+          <button onclick="setPeriod(this, 7)" class="period-btn active bg-zinc-800 px-6 py-3 rounded-2xl text-sm font-medium">Son 7 Gün</button>
+          <button onclick="setPeriod(this, 30)" class="period-btn px-6 py-3 rounded-2xl text-sm font-medium">Son 30 Gün</button>
+          <button onclick="setPeriod(this, 90)" class="period-btn px-6 py-3 rounded-2xl text-sm font-medium">Son 3 Ay</button>
+          <button onclick="setPeriod(this, 0)" class="period-btn px-6 py-3 rounded-2xl text-sm font-medium">Tüm Zamanlar</button>
+        </div>
+
+        <!-- Ana Kartlar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-zinc-900 rounded-3xl p-7 hover:scale-105 transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-zinc-400">Toplam Antrenman</p>
+                <p id="total-workouts" class="text-5xl font-bold mt-2 text-pink-400">0</p>
+              </div>
+              <i class="fas fa-dumbbell text-5xl text-pink-500/20"></i>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900 rounded-3xl p-7 hover:scale-105 transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-zinc-400">Aktif Antrenman</p>
+                <p id="active-workouts" class="text-5xl font-bold mt-2 text-emerald-400">0</p>
+              </div>
+              <i class="fas fa-fire text-5xl text-emerald-500/20"></i>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900 rounded-3xl p-7 hover:scale-105 transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-zinc-400">Toplam Egzersiz</p>
+                <p id="total-exercises" class="text-5xl font-bold mt-2 text-sky-400">0</p>
+              </div>
+              <i class="fas fa-list-ul text-5xl text-sky-500/20"></i>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900 rounded-3xl p-7 hover:scale-105 transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-zinc-400">Ortalama Süre</p>
+                <p id="avg-duration" class="text-5xl font-bold mt-2 text-amber-400">0 dk</p>
+              </div>
+              <i class="fas fa-clock text-5xl text-amber-500/20"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grafikler -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
+          <div class="bg-zinc-900 rounded-3xl p-8">
+            <h3 class="text-xl font-semibold mb-6">Haftalık Aktivite</h3>
+            <canvas id="activityChart"></canvas>
+          </div>
+          <div class="bg-zinc-900 rounded-3xl p-8">
+            <h3 class="text-xl font-semibold mb-6">Kategori Dağılımı</h3>
+            <canvas id="popularChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Son Aktiviteler -->
+        <div class="mt-10 bg-zinc-900 rounded-3xl overflow-hidden">
+          <div class="p-8 border-b border-zinc-800">
+            <h3 class="text-xl font-semibold">Son Eklenen Antrenmanlar</h3>
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-zinc-800">
+                <th class="text-left p-6">Antrenman Adı</th>
+                <th class="text-left p-6">Kategori</th>
+                <th class="text-center p-6">Süre</th>
+                <th class="text-center p-6">Zorluk</th>
+                <th class="text-center p-6">Egzersiz</th>
+              </tr>
+            </thead>
+            <tbody id="recentTable" class="divide-y divide-zinc-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activityChart, popularChart;
+
+    function renderSidebar() {
+      document.getElementById('sidebar').innerHTML = `
+        <div class="px-6 py-8 border-b border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💪</div>
+            <h1 class="text-2xl font-bold text-white">FitTrack</h1>
+          </div>
+          <p class="text-pink-400 text-sm mt-1 pl-1">Admin Paneli</p>
+        </div>
+
+        <nav class="flex-1 px-3 py-6 space-y-1">
+          <a href="admin.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 transition">
+            <i class="fas fa-cogs w-5"></i><span>Admin Paneli</span>
+          </a>
+
+          <div class="px-6 mt-8 mb-3">
+            <span class="text-pink-400 text-xs font-semibold tracking-widest">YÖNETİM</span>
+          </div>
+          
+          <a href="admin-stats.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl bg-zinc-800 text-pink-400">
+            <i class="fas fa-chart-bar w-5"></i><span>İstatistikler & Raporlar</span>
+          </a>
+
+          <a href="admin-workouts.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 transition">
+            <i class="fas fa-dumbbell w-5"></i><span>Antrenman Yönetimi</span>
+          </a>
+
+          <div class="px-6 mt-8 mb-3">
+            <span class="text-pink-400 text-xs font-semibold tracking-widest">SİSTEM</span>
+          </div>
+          
+          <a href="admin-settings.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 transition">
+            <i class="fas fa-cog w-5"></i><span>Sistem Ayarları</span>
+          </a>
+
+          <a href="admin-site.html" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 transition">
+            <i class="fas fa-globe w-5"></i><span>Site Ayarları</span>
+          </a>
+        </nav>
+
+        <div class="p-6 border-t border-zinc-800 mt-auto">
+          <button onclick="cikisYap()" class="w-full flex items-center justify-center gap-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 py-4 rounded-2xl transition font-medium">
+            <i class="fas fa-sign-out-alt"></i><span>Çıkış Yap</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function loadStats() {
+      const workouts = JSON.parse(localStorage.getItem('fittrack_workouts') || '[]');
+
+      document.getElementById('total-workouts').textContent = workouts.length.toLocaleString('tr-TR');
+      
+      const active = workouts.filter(w => w.status === "Aktif").length;
+      document.getElementById('active-workouts').textContent = active;
+
+      let totalEx = 0;
+      workouts.forEach(w => totalEx += (w.exercises ? w.exercises.length : 0));
+      document.getElementById('total-exercises').textContent = totalEx;
+
+      const avg = workouts.length ? Math.round(workouts.reduce((a, b) => a + b.duration, 0) / workouts.length) : 0;
+      document.getElementById('avg-duration').textContent = avg + " dk";
+
+      renderRecentTable(workouts);
+      createCharts(workouts);
+    }
+
+    function renderRecentTable(workouts) {
+      const tbody = document.getElementById('recentTable');
+      tbody.innerHTML = '';
+
+      const sorted = [...workouts].sort((a,b) => b.id - a.id).slice(0, 8);
+
+      sorted.forEach(w => {
+        const exCount = w.exercises ? w.exercises.length : 0;
+        tbody.innerHTML += `
+          <tr class="hover:bg-zinc-800/50 transition">
+            <td class="p-6 font-medium">${w.name}</td>
+            <td class="p-6 text-zinc-400">${w.category}</td>
+            <td class="p-6 text-center">${w.duration} dk</td>
+            <td class="p-6 text-center">
+              <span class="px-4 py-1 rounded-full text-sm ${w.difficulty === 'İleri' ? 'bg-red-500/20 text-red-400' : w.difficulty === 'Orta' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-emerald-500/20 text-emerald-400'}">
+                ${w.difficulty}
+              </span>
+            </td>
+            <td class="p-6 text-center font-medium">${exCount}</td>
+          </tr>
+        `;
+      });
+
+      if (sorted.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-12 text-center text-zinc-500">Henüz antrenman eklenmedi.</td></tr>`;
+      }
+    }
+
+    function createCharts(workouts) {
+      // Kategori Grafiği
+      const catCount = {};
+      workouts.forEach(w => catCount[w.category] = (catCount[w.category] || 0) + 1);
+
+      if (popularChart) popularChart.destroy();
+      popularChart = new Chart(document.getElementById('popularChart'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(catCount),
+          datasets: [{ data: Object.values(catCount), backgroundColor: ['#ec4899','#a855f7','#eab308','#22d3ee','#10b981'] }]
+        },
+        options: { responsive: true, cutout: '65%' }
+      });
+
+      // Aktivite Grafiği
+      if (activityChart) activityChart.destroy();
+      activityChart = new Chart(document.getElementById('activityChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'],
+          datasets: [{
+            label: 'Antrenman Sayısı',
+            data: [8,12,9,15,18,14,11],
+            backgroundColor: '#ec4899',
+            borderRadius: 8
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }}
+      });
+    }
+
+    function setPeriod(btn, days) {
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active', 'bg-zinc-800'));
+      btn.classList.add('active', 'bg-zinc-800');
+    }
+
+    function exportToCSV() {
+      const workouts = JSON.parse(localStorage.getItem('fittrack_workouts') || '[]');
+      if (workouts.length === 0) return alert("Henüz veri yok!");
+
+      let csv = "ID,Antrenman Adı,Kategori,Süre,Zorluk,Durum,Egzersiz Sayısı\n";
+      
+      workouts.forEach(w => {
+        const exCount = w.exercises ? w.exercises.length : 0;
+        csv += `${w.id},"${w.name}",${w.category},${w.duration},${w.difficulty},${w.status},${exCount}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fittrack-rapor-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      
+      alert("✅ Rapor başarıyla indirildi!");
+    }
+
+    function cikisYap() {
+      if (confirm("Çıkış yapmak istediğinden emin misin?")) {
+        localStorage.removeItem("isAdmin");
+        window.location.href = "index.html";
+      }
+    }
+
+    function checkAdminAccess() {
+      if (localStorage.getItem("isAdmin") !== "true") {
+        alert("❌ Bu sayfaya sadece Admin yetkisiyle erişebilirsiniz!");
+        window.location.href = "dashboard.html";
+        return false;
+      }
+      return true;
+    }
+
+    window.onload = () => {
+      if (!checkAdminAccess()) return;
+      renderSidebar();
+      loadStats();
+    };
+  </script>
+</body>
+</html>
